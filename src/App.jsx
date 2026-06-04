@@ -347,7 +347,7 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
     const totalCount = Object.values(penaltyCount[teamKey] || {}).reduce((a, b) => a + b, 0);
 
     return (
-        <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "12px 14px", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "8px 10px", gap: 6 }}>
 
             {/* Team header */}
             <div style={{ borderTop: `3px solid ${color}`, background: C.surface, borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -378,6 +378,14 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
                 </div>
             </div>
 
+            {/* Log Penalty button */}
+            <button
+                style={{ ...btn(), padding: "12px 0", fontSize: 15, background: color, color: "#fff", letterSpacing: "0.05em", flexShrink: 0 }}
+                onClick={onLogPenalty}
+            >
+                + LOG PENALTY
+            </button>
+
             {/* This jam's penalties for this team */}
             <div style={{ flex: 1, overflowY: "auto", background: C.surface, borderRadius: 10, padding: "10px 12px" }}>
                 <div style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
@@ -398,14 +406,6 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
                     </div>
                 }
             </div>
-
-            {/* Log Penalty button */}
-            <button
-                style={{ ...btn(), padding: "14px 0", fontSize: 15, background: color, color: "#fff", letterSpacing: "0.05em", flexShrink: 0 }}
-                onClick={onLogPenalty}
-            >
-                + LOG PENALTY
-            </button>
         </div>
     );
 }
@@ -473,27 +473,27 @@ function GameScreen({ teams, onFinish }) {
     const undoLastPenalty = () => updateJam((j) => ({ ...j, penalties: j.penalties.slice(0, -1) }));
 
     return (
-        <div style={{ height: "100vh", background: C.bg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ height: "100dvh", background: C.bg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
             {/* ── Top bar ── */}
-            <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "8px 16px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+            <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "5px 10px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
 
                 {/* Period + Jam */}
-                <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-                    <span style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.12em" }}>Period</span>
-                    <span style={{ fontSize: 26, fontWeight: 900, color: C.textPrimary, lineHeight: 1 }}>{period}</span>
-                    <span style={{ color: C.border, fontSize: 18 }}>·</span>
-                    <span style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.12em" }}>Jam</span>
-                    <span style={{ fontSize: 26, fontWeight: 900, color: C.accent, lineHeight: 1 }}>{jam}</span>
+                <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
+                    <span style={{ fontSize: 11, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em" }}>P</span>
+                    <span style={{ fontSize: 20, fontWeight: 900, color: C.textPrimary, lineHeight: 1 }}>{period}</span>
+                    <span style={{ color: C.border, fontSize: 14, margin: "0 2px" }}>·</span>
+                    <span style={{ fontSize: 11, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em" }}>J</span>
+                    <span style={{ fontSize: 20, fontWeight: 900, color: C.accent, lineHeight: 1 }}>{jam}</span>
                 </div>
 
                 {/* Jam End */}
-                <div style={{ display: "flex", gap: 5, marginLeft: 8 }}>
+                <div style={{ display: "flex", gap: 4 }}>
                     {[["lead", "Called Off"], ["2min", "2 Min"], ["injury", "Injury"]].map(([value, label]) => {
                         const active = currentJam.jamEnd === value;
                         return (
                             <button key={value}
-                                    style={{ ...btn(), padding: "6px 12px", fontSize: 12, background: active ? C.accent : C.surfaceHigh, color: active ? "#000" : C.textSecondary, border: `2px solid ${active ? C.accent : C.border}` }}
+                                    style={{ ...btn(), padding: "5px 9px", fontSize: 11, background: active ? C.accent : C.surfaceHigh, color: active ? "#000" : C.textSecondary, border: `2px solid ${active ? C.accent : C.border}` }}
                                     onClick={() => updateJam((j) => ({ ...j, jamEnd: active ? null : value }))}>
                                 {label}
                             </button>
@@ -506,10 +506,10 @@ function GameScreen({ teams, onFinish }) {
                 {/* Undo + navigation */}
                 <div style={{ display: "flex", gap: 8 }}>
                     {currentJam.penalties.length > 0 && (
-                        <button style={{ ...btn(), background: "none", color: C.danger, fontSize: 13, padding: "6px 12px", border: `1px solid ${C.danger}` }} onClick={undoLastPenalty}>↩ Undo</button>
+                        <button style={{ ...btn(), background: "none", color: C.danger, fontSize: 11, padding: "5px 9px", border: `1px solid ${C.danger}` }} onClick={undoLastPenalty}>↩ Undo</button>
                     )}
-                    <button style={{ ...btn(), background: C.surfaceHigh, color: C.textSecondary, border: `1px solid ${C.border}`, padding: "6px 14px", fontSize: 13 }} onClick={doNextJam}>Next Jam →</button>
-                    <button style={{ ...btn(), background: period === 2 ? C.danger : C.surfaceHigh, color: period === 2 ? "#fff" : C.textSecondary, border: `1px solid ${C.border}`, padding: "6px 14px", fontSize: 13 }} onClick={nextPeriod}>
+                    <button style={{ ...btn(), background: C.surfaceHigh, color: C.textSecondary, border: `1px solid ${C.border}`, padding: "5px 10px", fontSize: 11 }} onClick={doNextJam}>Next Jam →</button>
+                    <button style={{ ...btn(), background: period === 2 ? C.danger : C.surfaceHigh, color: period === 2 ? "#fff" : C.textSecondary, border: `1px solid ${C.border}`, padding: "5px 10px", fontSize: 11 }} onClick={nextPeriod}>
                         {period === 2 ? "End Game" : "Period 2 →"}
                     </button>
                 </div>
