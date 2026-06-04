@@ -296,19 +296,29 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                             <div style={{ fontSize: 11, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
                                 {jamData.penalties.length} {jamData.penalties.length === 1 ? "Penalty" : "Penalties"}
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                                {jamData.penalties.map((p, i) => {
-                                    const tc = teamColor(p.team);
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                                {["teamA", "teamB"].map((tk) => {
+                                    const tc = teamColor(tk);
+                                    const tPens = jamData.penalties.filter((p) => p.team === tk);
                                     return (
-                                        <div key={i} style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderLeft: `4px solid ${tc}`, borderRadius: 8, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                                                <span style={{ fontSize: 15, fontWeight: 900, color: tc }}>#{p.skater}</span>
-                                                <span style={{ fontSize: 11, color: C.textSecondary }}>{teamName(p.team)}</span>
+                                        <div key={tk}>
+                                            <div style={{ fontSize: 10, color: tc, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 5 }}>
+                                                {teamName(tk)} {tPens.length > 0 ? `· ${tPens.length}` : "· clean"}
                                             </div>
-                                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                                                <span style={{ fontSize: 18, fontWeight: 900, color: C.accent }}>{p.code}</span>
-                                                <span style={{ fontSize: 10, color: C.textSecondary }}>{PENALTY_CODES.find((x) => x.code === p.code)?.label}</span>
-                                            </div>
+                                            {tPens.length === 0
+                                                ? <div style={{ fontSize: 12, color: C.textSecondary, fontStyle: "italic" }}>No penalties</div>
+                                                : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                                                    {tPens.map((p, i) => (
+                                                        <div key={i} style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderLeft: `4px solid ${tc}`, borderRadius: 8, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                            <span style={{ fontSize: 15, fontWeight: 900, color: tc }}>#{p.skater}</span>
+                                                            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                                                <span style={{ fontSize: 18, fontWeight: 900, color: C.accent }}>{p.code}</span>
+                                                                <span style={{ fontSize: 10, color: C.textSecondary }}>{PENALTY_CODES.find((x) => x.code === p.code)?.label}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            }
                                         </div>
                                     );
                                 })}
