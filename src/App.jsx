@@ -41,9 +41,7 @@ const C = {
     border:"#d1d5db", accent:"#d97706", accentDim:"#fbbf24",
     textPrimary:"#111827", textSecondary:"#6b7280",
     danger:"#dc2626", foulout:"#dc2626",
-    warn0:"#ca8a04",  // 4p — dark gold (confirmation needed)
-    warn1:"#b45309",  // 5p — deeper amber
-    warn2:"#ea580c",  // 6p — orange
+    warn0:"#ca8a04", warn1:"#b45309", warn2:"#ea580c",
 };
 
 const btn = (extra={}) => ({
@@ -51,7 +49,6 @@ const btn = (extra={}) => ({
     letterSpacing:"0.04em", borderRadius:8, transition:"all 0.12s ease", ...extra,
 });
 
-// 4=darkgold, 5=amber, 6=orange, 7=red+disabled
 const penaltyBorderColor = count => {
     if (count >= 7) return C.foulout;
     if (count === 6) return C.warn2;
@@ -65,10 +62,8 @@ const isLeadDisabled = (myKey, lead, lost) => {
     return (lost[myKey] && !lead[myKey]) || lead[otherKey];
 };
 
-// Auto jamEnd logic
 const computeAutoJamEnd = (jamData) => {
-    if (jamData.jamEnd === "injury") return "injury"; // never override injury
-    // only Lead WITHOUT Lost can call off
+    if (jamData.jamEnd === "injury") return "injury";
     const canCallOff = ["teamA","teamB"].some(tk => jamData.lead[tk] && !jamData.lost[tk]);
     if (canCallOff) return "lead";
     return "2min";
@@ -129,7 +124,7 @@ function SetupScreen({ onStart }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// CODE GRID — reusable penalty code selector
+// CODE GRID
 // ════════════════════════════════════════════════════════════════════════════
 function CodeGrid({ currentCode, onSelect, cols=5 }) {
     return (
@@ -157,7 +152,6 @@ function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel 
     return (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"flex-end", zIndex:100 }}>
             <div style={{ width:"100%", height:"70%", background:C.surface, borderRadius:"20px 20px 0 0", display:"flex", overflow:"hidden" }}>
-                {/* Skater roster */}
                 <div style={{ flex:1.3, borderRight:`1px solid ${C.border}`, padding:"18px 16px 24px", overflowY:"auto" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
                         <div>
@@ -185,7 +179,6 @@ function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel 
                         })}
                     </div>
                 </div>
-                {/* Code selector */}
                 <div style={{ flex:1, padding:"18px 16px 24px", overflowY:"auto", background:C.surfaceMid }}>
                     <div style={{ fontSize:13, fontWeight:800, color:selectedSkater?C.textPrimary:C.textSecondary, marginBottom:14 }}>
                         {selectedSkater?"Select Code":"← Pick skater first"}
@@ -212,7 +205,6 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
     const teamColor = k => k==="teamA"?teams.teamA.color:teams.teamB.color;
     const teamName  = k => k==="teamA"?teams.teamA.name:teams.teamB.name;
     const pct = (remaining/20)*100;
-
     const jamEndLabel = jamData.jamEnd==="lead"?"Called Off":jamData.jamEnd==="2min"?"2 Minutes":jamData.jamEnd==="injury"?"Injury":null;
 
     return (
@@ -229,8 +221,6 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                         </div>
                         <button onClick={onDismiss} style={{ ...btn(), background:C.surfaceHigh, color:C.textSecondary, padding:"8px 16px", fontSize:13 }}>Dismiss · {remaining}s</button>
                     </div>
-
-                    {/* Lead/Lost/SP — 2 columns by team */}
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
                         {["teamA","teamB"].map(tk => {
                             const tc = teamColor(tk);
@@ -239,14 +229,12 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                             const hasLost = jamData.lost?.[tk];
                             const hasSP   = jamData.starPass?.[tk];
                             const calledOff = hasLead && jamData.jamEnd==="lead";
-                            const align = tk==="teamA" ? "left" : "right";
+                            const align = tk==="teamA"?"left":"right";
                             return (
                                 <div key={tk} style={{ display:"flex", flexDirection:"column", gap:5 }}>
                                     {hasLead && (
                                         <div style={{ background:`${tc}18`, border:`1px solid ${tc}`, borderRadius:8, padding:"6px 12px", textAlign:align }}>
-                                            <div style={{ fontSize:10, color:C.textSecondary, textTransform:"uppercase", letterSpacing:"0.1em" }}>
-                                                {calledOff ? "Lead · Called Off by" : "Lead"}
-                                            </div>
+                                            <div style={{ fontSize:10, color:C.textSecondary, textTransform:"uppercase", letterSpacing:"0.1em" }}>{calledOff?"Lead · Called Off by":"Lead"}</div>
                                             <div style={{ fontSize:14, fontWeight:800, color:tc }}>{teamName(tk)}</div>
                                         </div>
                                     )}
@@ -272,8 +260,6 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                             );
                         })}
                     </div>
-
-                    {/* 2 Min / Injury centered */}
                     {jamEndLabel && jamData.jamEnd!=="lead" && (
                         <div style={{ display:"flex", justifyContent:"center", marginBottom:12 }}>
                             <div style={{ background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:8, padding:"8px 24px", textAlign:"center" }}>
@@ -282,8 +268,6 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                             </div>
                         </div>
                     )}
-
-                    {/* Penalties split by team */}
                     {jamData.penalties.length>0 && (
                         <div>
                             <div style={{ fontSize:11, color:C.textSecondary, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:8 }}>
@@ -325,11 +309,80 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// JAM HISTORY TAB
+// ADD PENALTY PANEL (for Jams tab)
 // ════════════════════════════════════════════════════════════════════════════
-function JamHistory({ jams, teams, onEditPenalty, onEditJamMeta }) {
+function AddPenaltyPanel({ teams, penaltyCount, fouledOut, onAdd, onCancel }) {
+    const [selectedTeam, setSelectedTeam] = useState(null);
+    const [selectedSkater, setSelectedSkater] = useState(null);
+
+    const team = selectedTeam ? teams[selectedTeam] : null;
+    const color = team?.color;
+    const tc = selectedTeam ? (penaltyCount[selectedTeam]||{}) : {};
+
+    return (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"flex-end", zIndex:150 }}>
+            <div style={{ width:"100%", height:"75%", background:C.surface, borderRadius:"20px 20px 0 0", display:"flex", flexDirection:"column", overflow:"hidden" }}>
+                <div style={{ padding:"14px 16px 10px", borderBottom:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div style={{ fontSize:15, fontWeight:800, color:C.textPrimary }}>Add Penalty</div>
+                    <button onClick={onCancel} style={{ ...btn(), background:C.surfaceHigh, color:C.textSecondary, padding:"6px 14px", fontSize:13 }}>Cancel</button>
+                </div>
+                <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
+                    {/* Team + Skater */}
+                    <div style={{ flex:1.3, borderRight:`1px solid ${C.border}`, padding:"14px 16px", overflowY:"auto" }}>
+                        {/* Team selector */}
+                        <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                            {["teamA","teamB"].map(tk=>(
+                                <button key={tk}
+                                        style={{ ...btn(), flex:1, padding:"10px 8px", fontSize:13, background:selectedTeam===tk?teams[tk].color:C.surfaceHigh, color:selectedTeam===tk?"#fff":C.textSecondary, border:`2px solid ${selectedTeam===tk?teams[tk].color:C.border}` }}
+                                        onClick={()=>{ setSelectedTeam(tk); setSelectedSkater(null); }}>
+                                    {teams[tk].name}
+                                </button>
+                            ))}
+                        </div>
+                        {/* Skater grid */}
+                        {team && (
+                            <div style={{ display:"grid", gridTemplateColumns:"repeat(5, 1fr)", gap:6 }}>
+                                {team.roster.map(num=>{
+                                    const count = tc[num]||0;
+                                    const fo = fouledOut[selectedTeam]?.[num];
+                                    const selected = selectedSkater===num;
+                                    const borderCol = penaltyBorderColor(count);
+                                    const textCol = count>=1&&count<4?C.accentDim:borderCol;
+                                    return (
+                                        <button key={num}
+                                                style={{ ...btn(), background:selected?color:C.surfaceHigh, border:`2px solid ${selected?color:borderCol}`, color:selected?"#fff":C.textPrimary, padding:"10px 4px", display:"flex", flexDirection:"column", alignItems:"center", gap:2, opacity:fo?0.35:1 }}
+                                                onClick={()=>!fo&&setSelectedSkater(selected?null:num)}>
+                                            <span style={{ fontSize:15, fontWeight:900 }}>{num}</span>
+                                            {count>0&&<span style={{ fontSize:9, fontWeight:700, color:selected?"rgba(0,0,0,0.5)":textCol }}>{fo?"FO":`${count}p`}</span>}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {!team && <div style={{ color:C.textSecondary, fontSize:13, fontStyle:"italic" }}>← Pick a team first</div>}
+                    </div>
+                    {/* Code selector */}
+                    <div style={{ flex:1, padding:"14px 16px", overflowY:"auto", background:C.surfaceMid }}>
+                        <div style={{ fontSize:13, fontWeight:800, color:selectedSkater?C.textPrimary:C.textSecondary, marginBottom:14 }}>
+                            {selectedSkater?`#${selectedSkater} — Select Code`:"← Pick skater first"}
+                        </div>
+                        <div style={{ opacity:selectedSkater?1:0.35, pointerEvents:selectedSkater?"auto":"none" }}>
+                            <CodeGrid currentCode={null} onSelect={code=>{ if(selectedSkater&&selectedTeam) onAdd(selectedSkater,selectedTeam,code); }} cols={2} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// JAM HISTORY
+// ════════════════════════════════════════════════════════════════════════════
+function JamHistory({ jams, teams, penaltyCount, fouledOut, onEditPenalty, onEditJamMeta, onAddPenalty }) {
     const [expanded, setExpanded] = useState(null);
     const [editingPenalty, setEditingPenalty] = useState(null);
+    const [addingPenaltyToJam, setAddingPenaltyToJam] = useState(null); // {period, jam}
 
     const teamColor = k => k==="teamA"?teams.teamA.color:teams.teamB.color;
     const teamName  = k => k==="teamA"?teams.teamA.name:teams.teamB.name;
@@ -344,139 +397,187 @@ function JamHistory({ jams, teams, onEditPenalty, onEditJamMeta }) {
     allJams.reverse();
 
     return (
-        <div style={{ flex:1, overflowY:"auto", padding:"12px 10px" }}>
-            {allJams.length===0 && <div style={{ textAlign:"center", color:C.textSecondary, fontSize:13, paddingTop:32 }}>No jams recorded yet</div>}
-            {allJams.map(({ period, jam, data }) => {
-                const key = `${period}-${jam}`;
-                const isOpen = expanded===key;
-                const leadTeam = ["teamA","teamB"].find(tk=>data.lead?.[tk]);
-                const lostTeams = ["teamA","teamB"].filter(tk=>data.lost?.[tk]);
-                const jamEndLabel = data.jamEnd==="lead"?"Called Off":data.jamEnd==="2min"?"2 Min":data.jamEnd==="injury"?"Injury":null;
+        <>
+            <div style={{ flex:1, overflowY:"auto", padding:"12px 10px" }}>
+                {allJams.length===0 && <div style={{ textAlign:"center", color:C.textSecondary, fontSize:13, paddingTop:32 }}>No jams recorded yet</div>}
+                {allJams.map(({ period, jam, data }) => {
+                    const key = `${period}-${jam}`;
+                    const isOpen = expanded===key;
+                    const leadTeam = ["teamA","teamB"].find(tk=>data.lead?.[tk]);
+                    const lostTeams = ["teamA","teamB"].filter(tk=>data.lost?.[tk]);
+                    const jamEndLabel = data.jamEnd==="lead"?"Called Off":data.jamEnd==="2min"?"2 Min":data.jamEnd==="injury"?"Injury":null;
 
-                return (
-                    <div key={key} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, marginBottom:6, overflow:"hidden" }}>
-                        {/* One-liner */}
-                        <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer" }} onClick={()=>setExpanded(isOpen?null:key)}>
-                            <div style={{ minWidth:60 }}>
-                                <span style={{ fontSize:12, fontWeight:800, color:C.textSecondary }}>P{period}·</span>
-                                <span style={{ fontSize:14, fontWeight:900, color:C.accent }}>J{jam}</span>
-                            </div>
-                            <div style={{ display:"flex", gap:5, flex:1, flexWrap:"wrap" }}>
-                                {leadTeam && (
-                                    <span style={{ fontSize:11, fontWeight:700, color:teamColor(leadTeam), background:`${teamColor(leadTeam)}18`, border:`1px solid ${teamColor(leadTeam)}`, borderRadius:4, padding:"2px 7px" }}>
-                    {data.jamEnd==="lead"?"✓ Called Off":"Lead"}: {teamName(leadTeam)}
-                  </span>
-                                )}
-                                {lostTeams.map(tk=>(
-                                    <span key={tk} style={{ fontSize:11, fontWeight:700, color:lostColor(teamColor(tk)), background:`${lostColor(teamColor(tk))}18`, border:`1px solid ${lostColor(teamColor(tk))}`, borderRadius:4, padding:"2px 7px" }}>
-                    Lost: {teamName(tk)}
-                  </span>
-                                ))}
-                                {jamEndLabel && jamEndLabel!=="Called Off" && (
-                                    <span style={{ fontSize:11, color:C.textSecondary, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 7px" }}>{jamEndLabel}</span>
-                                )}
-                                {data.penalties.length>0 && (
-                                    <span style={{ fontSize:11, color:C.textSecondary, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 7px" }}>{data.penalties.length}p</span>
-                                )}
-                            </div>
-                            <span style={{ color:C.textSecondary, fontSize:14 }}>{isOpen?"▲":"▼"}</span>
-                        </div>
-
-                        {/* Expanded */}
-                        {isOpen && (
-                            <div style={{ borderTop:`1px solid ${C.border}`, padding:"12px 14px", background:C.surfaceMid, display:"flex", flexDirection:"column", gap:10 }}>
-
-                                {/* Meta editor: 3 columns — Team A | Center | Team B */}
-                                <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:8, alignItems:"start" }}>
-                                    {/* Team A toggles */}
-                                    <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-                                        <div style={{ fontSize:10, color:teamColor("teamA"), fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2, textAlign:"left" }}>{teamName("teamA")}</div>
-                                        {[["lead","Lead"],["lost","Lost"],["starPass","★ SP"]].map(([field,label])=>{
-                                            const active = data[field]?.teamA||false;
-                                            const tc = teamColor("teamA");
-                                            const col = field==="lost"?lostColor(tc):tc;
-                                            return (
-                                                <button key={field}
-                                                        style={{ ...btn(), padding:"6px 10px", fontSize:12, background:active?col:C.surface, color:active?"#fff":C.textSecondary, border:`1px solid ${active?col:C.border}`, textAlign:"left" }}
-                                                        onClick={()=>onEditJamMeta(period,jam,field,"teamA",!active)}>
-                                                    {active?`✓ ${label}`:label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Center: Called Off / 2 Min / Injury */}
-                                    <div style={{ display:"flex", flexDirection:"column", gap:5, minWidth:100 }}>
-                                        <div style={{ fontSize:10, color:C.textSecondary, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2, textAlign:"center" }}>End</div>
-                                        {[["lead","Called Off"],["2min","2 Min"],["injury","Injury"]].map(([value,label])=>{
-                                            const active = data.jamEnd===value;
-                                            return (
-                                                <button key={value}
-                                                        style={{ ...btn(), padding:"6px 10px", fontSize:12, background:active?C.accent:C.surface, color:active?"#fff":C.textSecondary, border:`1px solid ${active?C.accent:C.border}`, textAlign:"center" }}
-                                                        onClick={()=>onEditJamMeta(period,jam,"jamEnd",null,active?null:value)}>
-                                                    {active?`✓ ${label}`:label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-
-                                    {/* Team B toggles */}
-                                    <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
-                                        <div style={{ fontSize:10, color:teamColor("teamB"), fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2, textAlign:"right" }}>{teamName("teamB")}</div>
-                                        {[["lead","Lead"],["lost","Lost"],["starPass","★ SP"]].map(([field,label])=>{
-                                            const active = data[field]?.teamB||false;
-                                            const tc = teamColor("teamB");
-                                            const col = field==="lost"?lostColor(tc):tc;
-                                            return (
-                                                <button key={field}
-                                                        style={{ ...btn(), padding:"6px 10px", fontSize:12, background:active?col:C.surface, color:active?"#fff":C.textSecondary, border:`1px solid ${active?col:C.border}`, textAlign:"right" }}
-                                                        onClick={()=>onEditJamMeta(period,jam,field,"teamB",!active)}>
-                                                    {active?`✓ ${label}`:label}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                    return (
+                        <div key={key} style={{ background:C.surface, border:`1px solid ${C.border}`, borderRadius:10, marginBottom:6, overflow:"hidden" }}>
+                            {/* One-liner */}
+                            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px", cursor:"pointer" }} onClick={()=>setExpanded(isOpen?null:key)}>
+                                <div style={{ minWidth:60 }}>
+                                    <span style={{ fontSize:12, fontWeight:800, color:C.textSecondary }}>P{period}·</span>
+                                    <span style={{ fontSize:14, fontWeight:900, color:C.accent }}>J{jam}</span>
                                 </div>
-
-                                {/* Penalties */}
-                                {data.penalties.length===0
-                                    ? <div style={{ fontSize:12, color:C.textSecondary, fontStyle:"italic" }}>No penalties this jam</div>
-                                    : <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                                        {data.penalties.map((p,i) => {
-                                            const tc = teamColor(p.team);
-                                            const editKey = `${key}-${i}`;
-                                            const isEditing = editingPenalty===editKey;
-                                            return (
-                                                <div key={i} style={{ background:C.surface, border:`1px solid ${C.border}`, borderLeft:`4px solid ${tc}`, borderRadius:8, padding:"8px 12px" }}>
-                                                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                                                        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                                                            <span style={{ fontSize:15, fontWeight:900, color:tc }}>#{p.skater}</span>
-                                                            <span style={{ fontSize:11, color:C.textSecondary }}>{teamName(p.team)}</span>
-                                                        </div>
-                                                        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                                                            <span style={{ fontSize:18, fontWeight:900, color:C.accent }}>{p.code}</span>
-                                                            <span style={{ fontSize:10, color:C.textSecondary }}>{PENALTY_CODES.find(x=>x.code===p.code)?.label}</span>
-                                                            <button onClick={()=>setEditingPenalty(isEditing?null:editKey)}
-                                                                    style={{ ...btn(), background:isEditing?C.accent:C.surfaceHigh, color:isEditing?"#fff":C.textSecondary, fontSize:11, padding:"4px 10px", border:`1px solid ${C.border}` }}>
-                                                                {isEditing?"Cancel":"Edit"}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    {isEditing && (
-                                                        <div style={{ marginTop:10 }}>
-                                                            <CodeGrid currentCode={p.code} onSelect={code=>{ onEditPenalty(period,jam,i,code); setEditingPenalty(null); }} cols={5} />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                }
+                                <div style={{ display:"flex", gap:5, flex:1, flexWrap:"wrap" }}>
+                                    {leadTeam && (
+                                        <span style={{ fontSize:11, fontWeight:700, color:teamColor(leadTeam), background:`${teamColor(leadTeam)}18`, border:`1px solid ${teamColor(leadTeam)}`, borderRadius:4, padding:"2px 7px" }}>
+                      {data.jamEnd==="lead"?"✓ Called Off":"Lead"}: {teamName(leadTeam)}
+                    </span>
+                                    )}
+                                    {lostTeams.map(tk=>(
+                                        <span key={tk} style={{ fontSize:11, fontWeight:700, color:lostColor(teamColor(tk)), background:`${lostColor(teamColor(tk))}18`, border:`1px solid ${lostColor(teamColor(tk))}`, borderRadius:4, padding:"2px 7px" }}>
+                      Lost: {teamName(tk)}
+                    </span>
+                                    ))}
+                                    {jamEndLabel && jamEndLabel!=="Called Off" && (
+                                        <span style={{ fontSize:11, color:C.textSecondary, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 7px" }}>{jamEndLabel}</span>
+                                    )}
+                                    {data.penalties.length>0 && (
+                                        <span style={{ fontSize:11, color:C.textSecondary, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 7px" }}>{data.penalties.length}p</span>
+                                    )}
+                                </div>
+                                <span style={{ color:C.textSecondary, fontSize:14 }}>{isOpen?"▲":"▼"}</span>
                             </div>
-                        )}
+
+                            {/* Expanded */}
+                            {isOpen && (
+                                <div style={{ borderTop:`1px solid ${C.border}`, padding:"12px 14px", background:C.surfaceMid, display:"flex", flexDirection:"column", gap:10 }}>
+                                    {/* Meta editor */}
+                                    <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:8, alignItems:"start" }}>
+                                        <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                                            <div style={{ fontSize:10, color:teamColor("teamA"), fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2, textAlign:"left" }}>{teamName("teamA")}</div>
+                                            {[["lead","Lead"],["lost","Lost"],["starPass","★ SP"]].map(([field,label])=>{
+                                                const active = data[field]?.teamA||false;
+                                                const tc = teamColor("teamA");
+                                                const col = field==="lost"?lostColor(tc):tc;
+                                                return (
+                                                    <button key={field}
+                                                            style={{ ...btn(), padding:"6px 10px", fontSize:12, background:active?col:C.surface, color:active?"#fff":C.textSecondary, border:`1px solid ${active?col:C.border}`, textAlign:"left" }}
+                                                            onClick={()=>onEditJamMeta(period,jam,field,"teamA",!active)}>
+                                                        {active?`✓ ${label}`:label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <div style={{ display:"flex", flexDirection:"column", gap:5, minWidth:100 }}>
+                                            <div style={{ fontSize:10, color:C.textSecondary, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2, textAlign:"center" }}>End</div>
+                                            {[["lead","Called Off"],["2min","2 Min"],["injury","Injury"]].map(([value,label])=>{
+                                                const active = data.jamEnd===value;
+                                                return (
+                                                    <button key={value}
+                                                            style={{ ...btn(), padding:"6px 10px", fontSize:12, background:active?C.accent:C.surface, color:active?"#fff":C.textSecondary, border:`1px solid ${active?C.accent:C.border}`, textAlign:"center" }}
+                                                            onClick={()=>onEditJamMeta(period,jam,"jamEnd",null,active?null:value)}>
+                                                        {active?`✓ ${label}`:label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                                            <div style={{ fontSize:10, color:teamColor("teamB"), fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2, textAlign:"right" }}>{teamName("teamB")}</div>
+                                            {[["lead","Lead"],["lost","Lost"],["starPass","★ SP"]].map(([field,label])=>{
+                                                const active = data[field]?.teamB||false;
+                                                const tc = teamColor("teamB");
+                                                const col = field==="lost"?lostColor(tc):tc;
+                                                return (
+                                                    <button key={field}
+                                                            style={{ ...btn(), padding:"6px 10px", fontSize:12, background:active?col:C.surface, color:active?"#fff":C.textSecondary, border:`1px solid ${active?col:C.border}`, textAlign:"right" }}
+                                                            onClick={()=>onEditJamMeta(period,jam,field,"teamB",!active)}>
+                                                        {active?`✓ ${label}`:label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Penalties */}
+                                    {data.penalties.length===0
+                                        ? <div style={{ fontSize:12, color:C.textSecondary, fontStyle:"italic" }}>No penalties this jam</div>
+                                        : <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                                            {data.penalties.map((p,i) => {
+                                                const tc = teamColor(p.team);
+                                                const editKey = `${key}-${i}`;
+                                                const isEditing = editingPenalty===editKey;
+                                                return (
+                                                    <div key={i} style={{ background:C.surface, border:`1px solid ${C.border}`, borderLeft:`4px solid ${tc}`, borderRadius:8, padding:"8px 12px" }}>
+                                                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                                                            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                                                                <span style={{ fontSize:15, fontWeight:900, color:tc }}>#{p.skater}</span>
+                                                                <span style={{ fontSize:11, color:C.textSecondary }}>{teamName(p.team)}</span>
+                                                            </div>
+                                                            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                                                                <span style={{ fontSize:18, fontWeight:900, color:C.accent }}>{p.code}</span>
+                                                                <span style={{ fontSize:10, color:C.textSecondary }}>{PENALTY_CODES.find(x=>x.code===p.code)?.label}</span>
+                                                                <button onClick={()=>setEditingPenalty(isEditing?null:editKey)}
+                                                                        style={{ ...btn(), background:isEditing?C.accent:C.surfaceHigh, color:isEditing?"#fff":C.textSecondary, fontSize:11, padding:"4px 10px", border:`1px solid ${C.border}` }}>
+                                                                    {isEditing?"Cancel":"Edit"}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        {isEditing && (
+                                                            <div style={{ marginTop:10 }}>
+                                                                <CodeGrid currentCode={p.code} onSelect={code=>{ onEditPenalty(period,jam,i,code); setEditingPenalty(null); }} cols={5} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    }
+
+                                    {/* Add penalty button */}
+                                    <button
+                                        style={{ ...btn(), padding:"10px 0", fontSize:13, background:C.surfaceHigh, color:C.textSecondary, border:`1px dashed ${C.border}` }}
+                                        onClick={()=>setAddingPenaltyToJam({ period, jam })}>
+                                        + Add Penalty
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {addingPenaltyToJam && (
+                <AddPenaltyPanel
+                    teams={teams}
+                    penaltyCount={penaltyCount}
+                    fouledOut={fouledOut}
+                    onAdd={(skater,team,code)=>{ onAddPenalty(addingPenaltyToJam.period,addingPenaltyToJam.jam,skater,team,code); setAddingPenaltyToJam(null); }}
+                    onCancel={()=>setAddingPenaltyToJam(null)}
+                />
+            )}
+        </>
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ROSTER EDITOR
+// ════════════════════════════════════════════════════════════════════════════
+function RosterEditor({ teamKey, team, onSave, onCancel }) {
+    const [raw, setRaw] = useState(team.roster.join("\n"));
+    const parsed = raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean).sort(alphanumSort);
+
+    return (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300, padding:32 }}>
+            <div style={{ width:"100%", maxWidth:400, background:C.surface, borderRadius:16, overflow:"hidden", border:`1px solid ${C.border}` }}>
+                <div style={{ padding:"16px 20px", borderBottom:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div>
+                        <div style={{ fontSize:11, color:team.color, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em" }}>Edit Roster</div>
+                        <div style={{ fontSize:16, fontWeight:900, color:C.textPrimary }}>{team.name}</div>
                     </div>
-                );
-            })}
+                    <button onClick={onCancel} style={{ ...btn(), background:C.surfaceHigh, color:C.textSecondary, padding:"6px 14px", fontSize:13 }}>Cancel</button>
+                </div>
+                <div style={{ padding:"16px 20px" }}>
+          <textarea
+              style={{ width:"100%", boxSizing:"border-box", height:180, background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:8, color:C.textPrimary, fontFamily:"inherit", fontSize:14, padding:"10px 12px", outline:"none", resize:"vertical" }}
+              value={raw} onChange={e=>setRaw(e.target.value)}
+              placeholder="One number per line or comma-separated" />
+                    <div style={{ fontSize:12, color:C.textSecondary, marginTop:6, marginBottom:14 }}>{parsed.length} skaters: {parsed.slice(0,6).join(", ")}{parsed.length>6?" …":""}</div>
+                    <button
+                        style={{ ...btn(), width:"100%", padding:"12px 0", fontSize:14, background:parsed.length>0?team.color:C.surfaceHigh, color:parsed.length>0?"#fff":C.textSecondary }}
+                        disabled={parsed.length===0}
+                        onClick={()=>onSave(teamKey, parsed)}>
+                        Save Roster
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
@@ -484,7 +585,7 @@ function JamHistory({ jams, teams, onEditPenalty, onEditJamMeta }) {
 // ════════════════════════════════════════════════════════════════════════════
 // TEAM PANEL
 // ════════════════════════════════════════════════════════════════════════════
-function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPenalty, onColorChange }) {
+function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPenalty, onColorChange, onEditRoster }) {
     const [editingPenalty, setEditingPenalty] = useState(null);
     const color = team.color;
     const lost = lostColor(color);
@@ -498,7 +599,6 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
     const handleEditPenalty = (idx, newCode) => {
         updateJam(j => {
             const penalties = [...j.penalties];
-            // find the idx-th penalty for this team
             let count = 0;
             for (let i=0; i<penalties.length; i++) {
                 if (penalties[i].team===teamKey) {
@@ -513,27 +613,30 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
 
     return (
         <div style={{ display:"flex", flexDirection:"column", height:"100%", padding:"8px 10px", gap:6 }}>
-            {/* Header */}
             <div style={{ borderTop:`3px solid ${color}`, background:C.surface, borderRadius:10, padding:"10px 14px" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
                         <div style={{ fontSize:13, fontWeight:900, color }}>{team.name}</div>
                         <label style={{ cursor:"pointer", display:"flex", alignItems:"center", gap:4, background:C.surfaceHigh, border:`1px solid ${C.border}`, borderRadius:6, padding:"3px 8px" }}>
                             <div style={{ width:12, height:12, borderRadius:3, background:color, border:`1px solid ${C.border}` }} />
                             <span style={{ fontSize:10, color:C.textSecondary }}>color</span>
                             <input type="color" value={color} onChange={e=>onColorChange(teamKey,e.target.value)} style={{ width:0, height:0, opacity:0, position:"absolute" }} />
                         </label>
+                        <button onClick={()=>onEditRoster(teamKey)} style={{ ...btn(), background:C.surfaceHigh, border:`1px solid ${C.border}`, color:C.textSecondary, fontSize:10, padding:"3px 8px" }}>✏️ roster</button>
                     </div>
-                    <div style={{ fontSize:11, color:C.textSecondary }}>{totalCount} penalties total</div>
+                    <div style={{ fontSize:11, color:C.textSecondary }}>{totalCount} total</div>
                 </div>
                 <div style={{ display:"flex", gap:6 }}>
-                    <button style={{ ...btn(), flex:1, padding:"7px 8px", fontSize:12, background:hasLead?color:C.surfaceHigh, color:hasLead?"#fff":leadDisabled?C.border:C.textSecondary, border:`2px solid ${hasLead?color:C.border}`, opacity:leadDisabled&&!hasLead?0.4:1, cursor:leadDisabled?"not-allowed":"pointer" }} onClick={()=>!leadDisabled&&updateJam(j=>({...j,lead:{...j.lead,[teamKey]:!hasLead}}))}>
+                    <button style={{ ...btn(), flex:1, padding:"12px 8px", fontSize:13, background:hasLead?color:C.surfaceHigh, color:hasLead?"#fff":leadDisabled?C.border:C.textSecondary, border:`2px solid ${hasLead?color:C.border}`, opacity:leadDisabled&&!hasLead?0.4:1, cursor:leadDisabled?"not-allowed":"pointer" }}
+                            onClick={()=>!leadDisabled&&updateJam(j=>({...j,lead:{...j.lead,[teamKey]:!hasLead}}))}>
                         {hasLead?"✓ Lead":"Lead"}
                     </button>
-                    <button style={{ ...btn(), flex:1, padding:"7px 8px", fontSize:12, background:hasLost?lost:C.surfaceHigh, color:hasLost?"#fff":C.textSecondary, border:`2px solid ${hasLost?lost:C.border}` }} onClick={()=>updateJam(j=>({...j,lost:{...j.lost,[teamKey]:!hasLost}}))}>
+                    <button style={{ ...btn(), flex:1, padding:"12px 8px", fontSize:13, background:hasLost?lost:C.surfaceHigh, color:hasLost?"#fff":C.textSecondary, border:`2px solid ${hasLost?lost:C.border}` }}
+                            onClick={()=>updateJam(j=>({...j,lost:{...j.lost,[teamKey]:!hasLost}}))}>
                         {hasLost?"✓ Lost":"Lost"}
                     </button>
-                    <button style={{ ...btn(), flex:1, padding:"7px 8px", fontSize:12, background:isStarPass?color:C.surfaceHigh, color:isStarPass?"#fff":C.textSecondary, border:`2px solid ${isStarPass?color:C.border}` }} onClick={()=>updateJam(j=>({...j,starPass:{...j.starPass,[teamKey]:!isStarPass}}))}>
+                    <button style={{ ...btn(), flex:1, padding:"12px 8px", fontSize:13, background:isStarPass?color:C.surfaceHigh, color:isStarPass?"#fff":C.textSecondary, border:`2px solid ${isStarPass?color:C.border}` }}
+                            onClick={()=>updateJam(j=>({...j,starPass:{...j.starPass,[teamKey]:!isStarPass}}))}>
                         {isStarPass?"★ SP ✓":"★ SP"}
                     </button>
                 </div>
@@ -591,6 +694,7 @@ function GameScreen({ teams: initialTeams, onFinish }) {
     const [penaltyPanel, setPenaltyPanel] = useState(null);
     const [jamReport, setJamReport] = useState(null);
     const [activeTab, setActiveTab] = useState("wrangling");
+    const [editingRoster, setEditingRoster] = useState(null);
 
     const currentJam = jams[period]?.[jam]||emptyJam();
 
@@ -600,6 +704,11 @@ function GameScreen({ teams: initialTeams, onFinish }) {
     });
 
     const handleColorChange = (teamKey, newColor) => setTeams(prev=>({...prev,[teamKey]:{...prev[teamKey],color:newColor}}));
+
+    const handleRosterSave = (teamKey, newRoster) => {
+        setTeams(prev=>({...prev,[teamKey]:{...prev[teamKey],roster:newRoster}}));
+        setEditingRoster(null);
+    };
 
     const penaltyCount = useCallback(()=>{
         const counts={teamA:{},teamB:{}};
@@ -622,6 +731,13 @@ function GameScreen({ teams: initialTeams, onFinish }) {
             const pd={...prev[p]}, jd={...pd[j]}, penalties=[...jd.penalties];
             penalties[idx]={...penalties[idx],code:newCode};
             return {...prev,[p]:{...pd,[j]:{...jd,penalties}}};
+        });
+    };
+
+    const handleAddPenaltyToJam = (p, j, skater, team, code) => {
+        setJams(prev=>{
+            const pd={...prev[p]}, jd={...pd[j]};
+            return {...prev,[p]:{...pd,[j]:{...jd,penalties:[...jd.penalties,{skater,team,code}]}}};
         });
     };
 
@@ -657,7 +773,6 @@ function GameScreen({ teams: initialTeams, onFinish }) {
 
     return (
         <div style={{ height:"100dvh", background:C.bg, display:"flex", flexDirection:"column", overflow:"hidden" }}>
-            {/* Top bar */}
             <div style={{ background:C.surface, borderBottom:`1px solid ${C.border}`, padding:"5px 10px", display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
                 <div style={{ display:"flex", gap:6, alignItems:"baseline" }}>
                     <span style={{ fontSize:11, color:C.textSecondary, textTransform:"uppercase", letterSpacing:"0.1em" }}>P</span>
@@ -699,16 +814,16 @@ function GameScreen({ teams: initialTeams, onFinish }) {
             {activeTab==="wrangling" && (
                 <div style={{ flex:1, display:"grid", gridTemplateColumns:"1fr 1fr", overflow:"hidden" }}>
                     <div style={{ borderRight:`1px solid ${C.border}`, overflow:"hidden" }}>
-                        <TeamPanel teamKey="teamA" team={teams.teamA} currentJam={currentJam} penaltyCount={penaltyCount} updateJam={updateJam} onLogPenalty={()=>setPenaltyPanel("teamA")} onColorChange={handleColorChange} />
+                        <TeamPanel teamKey="teamA" team={teams.teamA} currentJam={currentJam} penaltyCount={penaltyCount} updateJam={updateJam} onLogPenalty={()=>setPenaltyPanel("teamA")} onColorChange={handleColorChange} onEditRoster={setEditingRoster} />
                     </div>
                     <div style={{ overflow:"hidden" }}>
-                        <TeamPanel teamKey="teamB" team={teams.teamB} currentJam={currentJam} penaltyCount={penaltyCount} updateJam={updateJam} onLogPenalty={()=>setPenaltyPanel("teamB")} onColorChange={handleColorChange} />
+                        <TeamPanel teamKey="teamB" team={teams.teamB} currentJam={currentJam} penaltyCount={penaltyCount} updateJam={updateJam} onLogPenalty={()=>setPenaltyPanel("teamB")} onColorChange={handleColorChange} onEditRoster={setEditingRoster} />
                     </div>
                 </div>
             )}
             {activeTab==="history" && (
                 <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
-                    <JamHistory jams={jams} teams={teams} onEditPenalty={handleEditPenalty} onEditJamMeta={handleEditJamMeta} />
+                    <JamHistory jams={jams} teams={teams} penaltyCount={penaltyCount} fouledOut={fouledOut} onEditPenalty={handleEditPenalty} onEditJamMeta={handleEditJamMeta} onAddPenalty={handleAddPenaltyToJam} />
                 </div>
             )}
 
@@ -717,6 +832,9 @@ function GameScreen({ teams: initialTeams, onFinish }) {
             )}
             {jamReport && (
                 <JamReport period={jamReport.period} jam={jamReport.jam} jamData={jamReport.jamData} teams={teams} onDismiss={()=>setJamReport(null)} />
+            )}
+            {editingRoster && (
+                <RosterEditor teamKey={editingRoster} team={teams[editingRoster]} onSave={handleRosterSave} onCancel={()=>setEditingRoster(null)} />
             )}
         </div>
     );
@@ -742,6 +860,29 @@ function ReviewScreen({ jams, teams, onReset }) {
 
     const jamEndLabel = v => v==="lead"?"Called Off":v==="2min"?"2 Min":v==="injury"?"Injury":"—";
 
+    const handleExport = () => {
+        const exportData = {
+            exportedAt: new Date().toISOString(),
+            teams: {
+                teamA: { name: teams.teamA.name, color: teams.teamA.color, roster: teams.teamA.roster },
+                teamB: { name: teams.teamB.name, color: teams.teamB.color, roster: teams.teamB.roster },
+            },
+            jams,
+            summary: {
+                teamA: { totalPenalties: allPenalties.filter(p=>p.team==="teamA").length },
+                teamB: { totalPenalties: allPenalties.filter(p=>p.team==="teamB").length },
+            }
+        };
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type:"application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const dateStr = new Date().toISOString().slice(0,10);
+        a.href = url;
+        a.download = `penalty-wrangler-${teams.teamA.name}-vs-${teams.teamB.name}-${dateStr}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column" }}>
             <div style={{ background:C.surface, borderBottom:`1px solid ${C.border}`, padding:"12px 24px" }}>
@@ -750,7 +891,10 @@ function ReviewScreen({ jams, teams, onReset }) {
                         <div style={{ fontSize:11, color:C.accent, fontWeight:800, letterSpacing:"0.15em", textTransform:"uppercase" }}>Post-Game</div>
                         <div style={{ fontSize:22, fontWeight:900, color:C.textPrimary }}>Review</div>
                     </div>
-                    <button onClick={onReset} style={{ ...btn(), background:C.surfaceHigh, color:C.textSecondary, border:`1px solid ${C.border}`, padding:"8px 16px", fontSize:13 }}>New Game</button>
+                    <div style={{ display:"flex", gap:8 }}>
+                        <button onClick={handleExport} style={{ ...btn(), background:C.accent, color:"#fff", padding:"8px 16px", fontSize:13 }}>⬇ Export JSON</button>
+                        <button onClick={onReset} style={{ ...btn(), background:C.surfaceHigh, color:C.textSecondary, border:`1px solid ${C.border}`, padding:"8px 16px", fontSize:13 }}>New Game</button>
+                    </div>
                 </div>
                 <div style={{ display:"flex", gap:16 }}>
                     {["teamA","teamB"].map(tk=>(
@@ -793,7 +937,7 @@ function ReviewScreen({ jams, teams, onReset }) {
                             Lost: {teamName(tk)}
                           </span>
                                                 ))}
-                                                {jd.jamEnd && <span style={{ fontSize:10, color:C.textSecondary, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 6px" }}>{jamEndLabel(jd.jamEnd)}</span>}
+                                                {jd.jamEnd&&<span style={{ fontSize:10, color:C.textSecondary, border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 6px" }}>{jamEndLabel(jd.jamEnd)}</span>}
                                             </div>
                                         </div>
                                         {jd.penalties.length>0 && (
