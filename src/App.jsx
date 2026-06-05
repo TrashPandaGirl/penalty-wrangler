@@ -1,49 +1,48 @@
 import { useState, useCallback, useEffect } from "react";
 
-// ── WFTDA Penalty Codes — official Quick Reference Guide (updated March 2019) ─
-// Source: https://static.wftda.com/officiating/wftda-penalty-quick-reference-guide.pdf
 const PENALTY_CODES = [
-    { code: "A", label: "High Block" },           // 4.1.1 Impact to Illegal Target Zone
-    { code: "B", label: "Back Block" },           // 4.1.1
-    { code: "L", label: "Low Block" },            // 4.1.1
-    { code: "H", label: "Head Block" },           // 4.1.2 Impact with Illegal Blocking Zone
-    { code: "F", label: "Forearm" },              // 4.1.2
-    { code: "C", label: "Illegal Contact" },      // 4.1.2 incl. Illegal Assist, Early Hit
-    { code: "D", label: "Direction" },            // 4.1.2 incl. Stop Block
-    { code: "E", label: "Leg Block" },            // 4.1.2
-    { code: "M", label: "Multiplayer" },          // 4.1.4
-    { code: "P", label: "Illegal Position" },     // 4.2.1 incl. Destruction, Skating OOB, Failure to Reform/Return/Yield
-    { code: "X", label: "Cut" },                  // 4.2.2 incl. Illegal Re-Entry
-    { code: "I", label: "Interference" },         // 4.2.3 incl. Delay of Game
-    { code: "N", label: "Illegal Procedure" },    // 4.2.4 incl. Star Pass Violation/Interference
-    { code: "G", label: "Misconduct" },           // 4.3 incl. Insubordination
+    { code: "A", label: "High Block" },
+    { code: "B", label: "Back Block" },
+    { code: "L", label: "Low Block" },
+    { code: "H", label: "Head Block" },
+    { code: "F", label: "Forearm" },
+    { code: "C", label: "Illegal Contact" },
+    { code: "D", label: "Direction" },
+    { code: "E", label: "Leg Block" },
+    { code: "M", label: "Multiplayer" },
+    { code: "P", label: "Illegal Position" },
+    { code: "X", label: "Cut" },
+    { code: "I", label: "Interference" },
+    { code: "N", label: "Illegal Procedure" },
+    { code: "G", label: "Misconduct" },
+    { code: "?", label: "Unknown" },
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const alphanumSort = (a, b) => a.toString().localeCompare(b.toString());
-
 const SCREEN = { SETUP: "setup", GAME: "game", REVIEW: "review" };
 
 const emptyJam = () => ({
-    lead: { teamA: null, teamB: null },        // null | "lead" | "lost"
-    jamEnd: null,                               // null | "lead" | "2min" | "injury"
-    starPass: { teamA: false, teamB: false },   // boolean per team
-    penalties: [],                              // [{ skater, team, code }]
+    lead: { teamA: null, teamB: null },
+    jamEnd: null,
+    starPass: { teamA: false, teamB: false },
+    penalties: [],
 });
 
 const C = {
-    bg: "#0d0f12",
-    surface: "#161a1f",
-    surfaceHigh: "#1e242b",
-    surfaceMid: "#181d23",
-    border: "#2a3140",
-    accent: "#f0c040",
-    accentDim: "#7a6020",
-    textPrimary: "#e8eaed",
-    textSecondary: "#7a8694",
-    danger: "#ef4444",
-    lost: "#a855f7",
-    foulout: "#ff6b35",
+    bg: "#f0f2f5",
+    surface: "#ffffff",
+    surfaceHigh: "#e8eaed",
+    surfaceMid: "#f5f6f8",
+    border: "#d1d5db",
+    accent: "#d97706",
+    accentDim: "#fbbf24",
+    textPrimary: "#111827",
+    textSecondary: "#6b7280",
+    danger: "#dc2626",
+    lost: "#7c3aed",
+    foulout: "#dc2626",
+    warn1: "#ca8a04",   // 5 penalties
+    warn2: "#ea580c",   // 6 penalties
 };
 
 const btn = (extra = {}) => ({
@@ -57,6 +56,15 @@ const btn = (extra = {}) => ({
     ...extra,
 });
 
+// penalty count → border color
+const penaltyBorderColor = (count, teamColor) => {
+    if (count >= 7) return C.foulout;
+    if (count === 6) return C.warn2;
+    if (count === 5) return C.warn1;
+    if (count >= 1) return C.accentDim;
+    return C.border;
+};
+
 // ════════════════════════════════════════════════════════════════════════════
 // SETUP SCREEN
 // ════════════════════════════════════════════════════════════════════════════
@@ -64,7 +72,7 @@ function SetupScreen({ onStart }) {
     const [teamAName, setTeamAName] = useState("");
     const [teamBName, setTeamBName] = useState("");
     const [teamAColor, setTeamAColor] = useState("#3b82f6");
-    const [teamBColor, setTeamBColor] = useState("#ef4444");
+    const [teamBColor, setTeamBColor] = useState("#dc2626");
     const [teamARosterRaw, setTeamARosterRaw] = useState("");
     const [teamBRosterRaw, setTeamBRosterRaw] = useState("");
 
@@ -119,7 +127,7 @@ function SetupScreen({ onStart }) {
 
             <div style={{ width: "100%", maxWidth: 920, padding: "20px 32px 0" }}>
                 <button
-                    style={{ ...btn(), width: "100%", padding: "16px 0", fontSize: 16, background: canStart ? C.accent : C.surfaceHigh, color: canStart ? "#000" : C.textSecondary }}
+                    style={{ ...btn(), width: "100%", padding: "16px 0", fontSize: 16, background: canStart ? C.accent : C.surfaceHigh, color: canStart ? "#fff" : C.textSecondary }}
                     disabled={!canStart}
                     onClick={() => onStart({
                         teamA: { name: teamAName.trim(), color: teamAColor, roster: rosterA },
@@ -134,7 +142,7 @@ function SetupScreen({ onStart }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// PENALTY PANEL — slides up, shows only selected team's roster + all codes
+// PENALTY PANEL
 // ════════════════════════════════════════════════════════════════════════════
 function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel }) {
     const [selectedSkater, setSelectedSkater] = useState(null);
@@ -147,10 +155,9 @@ function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel 
     };
 
     return (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "flex-end", zIndex: 100 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "flex-end", zIndex: 100 }}>
             <div style={{ width: "100%", height: "70%", background: C.surface, borderRadius: "20px 20px 0 0", display: "flex", overflow: "hidden" }}>
 
-                {/* LEFT — this team's roster only */}
                 <div style={{ flex: 1.3, borderRight: `1px solid ${C.border}`, padding: "18px 16px 24px", overflowY: "auto" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                         <div>
@@ -166,12 +173,13 @@ function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel 
                             const count = tc[num] || 0;
                             const fo = fouledOut[teamKey]?.[num];
                             const selected = selectedSkater === num;
+                            const borderCol = penaltyBorderColor(count, color);
                             return (
                                 <button key={num}
                                         style={{
                                             ...btn(),
                                             background: selected ? color : C.surfaceHigh,
-                                            border: `2px solid ${selected ? color : count >= 6 ? C.foulout : count >= 4 ? C.accentDim : C.border}`,
+                                            border: `2px solid ${selected ? color : borderCol}`,
                                             color: selected ? "#fff" : fo ? C.textSecondary : C.textPrimary,
                                             padding: "10px 4px",
                                             display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
@@ -181,7 +189,7 @@ function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel 
                                 >
                                     <span style={{ fontSize: 15, fontWeight: 900 }}>{num}</span>
                                     {count > 0 && (
-                                        <span style={{ fontSize: 9, fontWeight: 700, color: selected ? "rgba(255,255,255,0.75)" : count >= 6 ? C.foulout : C.accentDim }}>
+                                        <span style={{ fontSize: 9, fontWeight: 700, color: selected ? "rgba(0,0,0,0.5)" : borderCol }}>
                       {fo ? "FO" : `${count}p`}
                     </span>
                                     )}
@@ -191,7 +199,6 @@ function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel 
                     </div>
                 </div>
 
-                {/* RIGHT — penalty codes */}
                 <div style={{ flex: 1, padding: "18px 16px 24px", overflowY: "auto", background: C.surfaceMid }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: selectedSkater ? C.textPrimary : C.textSecondary, marginBottom: 14 }}>
                         {selectedSkater ? "Select Code" : "← Pick skater first"}
@@ -201,8 +208,8 @@ function PenaltyPanel({ teamKey, team, penaltyCount, fouledOut, onLog, onCancel 
                             <button key={code}
                                     style={{
                                         ...btn(),
-                                        background: selectedSkater ? C.surfaceHigh : C.bg,
-                                        border: `1px solid ${selectedSkater ? C.border : C.surfaceHigh}`,
+                                        background: selectedSkater ? C.surface : C.surfaceHigh,
+                                        border: `1px solid ${C.border}`,
                                         color: C.textPrimary,
                                         padding: "10px 8px",
                                         display: "flex", alignItems: "center", gap: 8,
@@ -237,21 +244,19 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
 
     const teamColor = (key) => (key === "teamA" ? teams.teamA.color : teams.teamB.color);
     const teamName  = (key) => (key === "teamA" ? teams.teamA.name  : teams.teamB.name);
-    const jamEndLabel = (v) => v === "lead" ? "Called Off" : v === "2min" ? "2 Min" : v === "injury" ? "Injury" : null;
     const pct = (remaining / 20) * 100;
 
     const leadTags = ["teamA", "teamB"].flatMap((tk) => {
         const s = jamData.lead?.[tk];
         if (s === "lead") return [{ key: tk, text: `Lead: ${teamName(tk)}`, color: teamColor(tk), bg: `${teamColor(tk)}22`, border: teamColor(tk) }];
-        if (s === "lost") return [{ key: tk, text: `${teamName(tk)} Lost`,   color: C.lost,          bg: `${C.lost}22`,          border: C.lost }];
+        if (s === "lost") return [{ key: tk, text: `${teamName(tk)} Lost`, color: C.lost, bg: `${C.lost}22`, border: C.lost }];
         return [];
     });
     const starTags = ["teamA", "teamB"].filter((tk) => jamData.starPass?.[tk]);
-    const hasData  = jamData.penalties.length > 0 || leadTags.length > 0 || jamData.jamEnd || starTags.length > 0;
 
     return (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 32 }}>
-            <div style={{ width: "100%", maxWidth: 700, background: C.surface, borderRadius: 20, overflow: "hidden", border: `1px solid ${C.border}` }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 32 }}>
+            <div style={{ width: "100%", maxWidth: 700, background: C.surface, borderRadius: 20, overflow: "hidden", border: `1px solid ${C.border}`, boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
                 <div style={{ height: 4, background: C.surfaceHigh }}>
                     <div style={{ height: "100%", width: `${pct}%`, background: C.accent, transition: "width 1s linear" }} />
                 </div>
@@ -264,7 +269,8 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                         <button onClick={onDismiss} style={{ ...btn(), background: C.surfaceHigh, color: C.textSecondary, padding: "8px 16px", fontSize: 13 }}>Dismiss · {remaining}s</button>
                     </div>
 
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: jamData.penalties.length > 0 ? 16 : 0 }}>
+                    {/* Lead + Star Pass row */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
                         {leadTags.length === 0 && (
                             <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 14px" }}>
                                 <div style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em" }}>Lead</div>
@@ -277,12 +283,6 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                                 <div style={{ fontSize: 14, fontWeight: 800, color: t.color }}>{t.text}</div>
                             </div>
                         ))}
-                        {jamData.jamEnd && (
-                            <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 14px" }}>
-                                <div style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em" }}>End</div>
-                                <div style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary }}>{jamEndLabel(jamData.jamEnd)}</div>
-                            </div>
-                        )}
                         {starTags.map((tk) => (
                             <div key={tk} style={{ background: `${teamColor(tk)}22`, border: `1px solid ${teamColor(tk)}`, borderRadius: 8, padding: "6px 14px" }}>
                                 <div style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em" }}>Star Pass</div>
@@ -291,6 +291,19 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                         ))}
                     </div>
 
+                    {/* 2 Min / Injury — centered */}
+                    {jamData.jamEnd && jamData.jamEnd !== "lead" && (
+                        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+                            <div style={{ background: C.surfaceHigh, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 24px", textAlign: "center" }}>
+                                <div style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em" }}>End</div>
+                                <div style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary }}>
+                                    {jamData.jamEnd === "2min" ? "2 Minutes" : "Injury"}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Penalties — split by team */}
                     {jamData.penalties.length > 0 && (
                         <div>
                             <div style={{ fontSize: 11, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
@@ -325,8 +338,6 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
                             </div>
                         </div>
                     )}
-
-                    {!hasData && <div style={{ color: C.textSecondary, fontSize: 14, textAlign: "center", padding: "8px 0" }}>No data recorded for this jam</div>}
                 </div>
             </div>
         </div>
@@ -334,7 +345,7 @@ function JamReport({ period, jam, jamData, teams, onDismiss }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// TEAM PANEL — one half of the game screen
+// TEAM PANEL
 // ════════════════════════════════════════════════════════════════════════════
 function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPenalty }) {
     const color = team.color;
@@ -343,11 +354,15 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
     const isStarPass   = currentJam.starPass?.[teamKey] === true;
 
     const handleLeadTap = () => {
-        if (isLostActive) return;
         updateJam((j) => ({ ...j, lead: { ...j.lead, [teamKey]: isLeadActive ? null : "lead" } }));
     };
     const handleLostTap = () => {
-        updateJam((j) => ({ ...j, lead: { ...j.lead, [teamKey]: isLostActive ? null : "lost" } }));
+        // Lost disables Lead: if Lost activated, clear Lead
+        if (!isLostActive && isLeadActive) {
+            updateJam((j) => ({ ...j, lead: { ...j.lead, [teamKey]: "lost" } }));
+        } else {
+            updateJam((j) => ({ ...j, lead: { ...j.lead, [teamKey]: isLostActive ? null : "lost" } }));
+        }
     };
     const handleStarPass = () => {
         updateJam((j) => ({ ...j, starPass: { ...j.starPass, [teamKey]: !isStarPass } }));
@@ -359,16 +374,14 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
     return (
         <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "8px 10px", gap: 6 }}>
 
-            {/* Team header */}
             <div style={{ borderTop: `3px solid ${color}`, background: C.surface, borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                     <div style={{ fontSize: 13, fontWeight: 900, color }}>{team.name}</div>
                     <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 1 }}>{totalCount} penalties total</div>
                 </div>
-                {/* Lead + Lost inline */}
                 <div style={{ display: "flex", gap: 6 }}>
                     <button
-                        style={{ ...btn(), padding: "7px 14px", fontSize: 12, background: isLeadActive ? color : C.surfaceHigh, color: isLeadActive ? "#fff" : C.textSecondary, border: `2px solid ${isLeadActive ? color : C.border}`, opacity: isLostActive ? 0.4 : 1 }}
+                        style={{ ...btn(), padding: "7px 14px", fontSize: 12, background: isLeadActive ? color : C.surfaceHigh, color: isLeadActive ? "#fff" : C.textSecondary, border: `2px solid ${isLeadActive ? color : C.border}` }}
                         onClick={handleLeadTap}
                     >
                         {isLeadActive ? "✓ Lead" : "Lead"}
@@ -396,7 +409,6 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
                 + LOG PENALTY
             </button>
 
-            {/* This jam's penalties for this team */}
             <div style={{ flex: 1, overflowY: "auto", background: C.surface, borderRadius: 10, padding: "10px 12px" }}>
                 <div style={{ fontSize: 10, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
                     This Jam — {teamPenalties.length} {teamPenalties.length === 1 ? "penalty" : "penalties"}
@@ -421,13 +433,13 @@ function TeamPanel({ teamKey, team, currentJam, penaltyCount, updateJam, onLogPe
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// GAME SCREEN — landscape, two equal team panels + shared top bar
+// GAME SCREEN
 // ════════════════════════════════════════════════════════════════════════════
 function GameScreen({ teams, onFinish }) {
     const [period, setPeriod] = useState(1);
     const [jam, setJam]       = useState(1);
     const [jams, setJams]     = useState({ 1: { 1: emptyJam() } });
-    const [penaltyPanel, setPenaltyPanel] = useState(null); // null | "teamA" | "teamB"
+    const [penaltyPanel, setPenaltyPanel] = useState(null);
     const [jamReport, setJamReport]       = useState(null);
 
     const currentJam = jams[period]?.[jam] || emptyJam();
@@ -485,10 +497,7 @@ function GameScreen({ teams, onFinish }) {
     return (
         <div style={{ height: "100dvh", background: C.bg, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-            {/* ── Top bar ── */}
             <div style={{ background: C.surface, borderBottom: `1px solid ${C.border}`, padding: "5px 10px", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-
-                {/* Period + Jam */}
                 <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
                     <span style={{ fontSize: 11, color: C.textSecondary, textTransform: "uppercase", letterSpacing: "0.1em" }}>P</span>
                     <span style={{ fontSize: 20, fontWeight: 900, color: C.textPrimary, lineHeight: 1 }}>{period}</span>
@@ -497,13 +506,12 @@ function GameScreen({ teams, onFinish }) {
                     <span style={{ fontSize: 20, fontWeight: 900, color: C.accent, lineHeight: 1 }}>{jam}</span>
                 </div>
 
-                {/* Jam End */}
                 <div style={{ display: "flex", gap: 4 }}>
                     {[["lead", "Called Off"], ["2min", "2 Min"], ["injury", "Injury"]].map(([value, label]) => {
                         const active = currentJam.jamEnd === value;
                         return (
                             <button key={value}
-                                    style={{ ...btn(), padding: "5px 9px", fontSize: 11, background: active ? C.accent : C.surfaceHigh, color: active ? "#000" : C.textSecondary, border: `2px solid ${active ? C.accent : C.border}` }}
+                                    style={{ ...btn(), padding: "5px 9px", fontSize: 11, background: active ? C.accent : C.surfaceHigh, color: active ? "#fff" : C.textSecondary, border: `2px solid ${active ? C.accent : C.border}` }}
                                     onClick={() => updateJam((j) => ({ ...j, jamEnd: active ? null : value }))}>
                                 {label}
                             </button>
@@ -513,8 +521,7 @@ function GameScreen({ teams, onFinish }) {
 
                 <div style={{ flex: 1 }} />
 
-                {/* Undo + navigation */}
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 6 }}>
                     {currentJam.penalties.length > 0 && (
                         <button style={{ ...btn(), background: "none", color: C.danger, fontSize: 11, padding: "5px 9px", border: `1px solid ${C.danger}` }} onClick={undoLastPenalty}>↩ Undo</button>
                     )}
@@ -525,37 +532,23 @@ function GameScreen({ teams, onFinish }) {
                 </div>
             </div>
 
-            {/* ── Two team panels ── */}
             <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", overflow: "hidden" }}>
                 <div style={{ borderRight: `1px solid ${C.border}`, overflow: "hidden" }}>
-                    <TeamPanel
-                        teamKey="teamA" team={teams.teamA}
-                        currentJam={currentJam} penaltyCount={penaltyCount}
-                        updateJam={updateJam} onLogPenalty={() => setPenaltyPanel("teamA")}
-                    />
+                    <TeamPanel teamKey="teamA" team={teams.teamA} currentJam={currentJam} penaltyCount={penaltyCount} updateJam={updateJam} onLogPenalty={() => setPenaltyPanel("teamA")} />
                 </div>
                 <div style={{ overflow: "hidden" }}>
-                    <TeamPanel
-                        teamKey="teamB" team={teams.teamB}
-                        currentJam={currentJam} penaltyCount={penaltyCount}
-                        updateJam={updateJam} onLogPenalty={() => setPenaltyPanel("teamB")}
-                    />
+                    <TeamPanel teamKey="teamB" team={teams.teamB} currentJam={currentJam} penaltyCount={penaltyCount} updateJam={updateJam} onLogPenalty={() => setPenaltyPanel("teamB")} />
                 </div>
             </div>
 
-            {/* Penalty panel */}
             {penaltyPanel && (
                 <PenaltyPanel
-                    teamKey={penaltyPanel}
-                    team={teams[penaltyPanel]}
-                    penaltyCount={penaltyCount}
-                    fouledOut={fouledOut}
-                    onLog={handleLog}
-                    onCancel={() => setPenaltyPanel(null)}
+                    teamKey={penaltyPanel} team={teams[penaltyPanel]}
+                    penaltyCount={penaltyCount} fouledOut={fouledOut}
+                    onLog={handleLog} onCancel={() => setPenaltyPanel(null)}
                 />
             )}
 
-            {/* Jam report */}
             {jamReport && (
                 <JamReport period={jamReport.period} jam={jamReport.jam} jamData={jamReport.jamData} teams={teams} onDismiss={() => setJamReport(null)} />
             )}
@@ -593,7 +586,7 @@ function ReviewScreen({ jams, teams, onReset }) {
         ["teamA", "teamB"].flatMap((tk) => {
             const s = leadObj?.[tk];
             if (s === "lead") return [{ key: tk, text: `Lead: ${teamName(tk)}`, color: teamColor(tk) }];
-            if (s === "lost") return [{ key: tk, text: `${teamName(tk)} Lost`,   color: C.lost }];
+            if (s === "lost") return [{ key: tk, text: `${teamName(tk)} Lost`, color: C.lost }];
             return [];
         });
 
@@ -620,7 +613,7 @@ function ReviewScreen({ jams, teams, onReset }) {
 
             <div style={{ display: "flex", borderBottom: `1px solid ${C.border}` }}>
                 {["jams", "skaters"].map((id) => (
-                    <button key={id} style={{ ...btn(), flex: 1, padding: "12px 0", background: activeTab === id ? C.accent : C.surfaceHigh, color: activeTab === id ? "#000" : C.textSecondary, fontSize: 14, borderRadius: 0 }} onClick={() => setActiveTab(id)}>
+                    <button key={id} style={{ ...btn(), flex: 1, padding: "12px 0", background: activeTab === id ? C.accent : C.surfaceHigh, color: activeTab === id ? "#fff" : C.textSecondary, fontSize: 14, borderRadius: 0 }} onClick={() => setActiveTab(id)}>
                         {id === "jams" ? "By Jam" : "By Skater"}
                     </button>
                 ))}
@@ -642,8 +635,8 @@ function ReviewScreen({ jams, teams, onReset }) {
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                                                 <span style={{ fontSize: 13, fontWeight: 800, color: C.textSecondary }}>P{p} · <span style={{ color: C.accent }}>J{j}</span></span>
                                                 <div style={{ display: "flex", gap: 5, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                                                    {tags.map((t)     => <span key={t.key} style={{ fontSize: 10, color: t.color, border: `1px solid ${t.color}`, borderRadius: 4, padding: "2px 6px" }}>{t.text}</span>)}
-                                                    {jd.jamEnd        && <span style={{ fontSize: 10, color: C.textSecondary, border: `1px solid ${C.border}`, borderRadius: 4, padding: "2px 6px" }}>{jamEndLabel(jd.jamEnd)}</span>}
+                                                    {tags.map((t) => <span key={t.key} style={{ fontSize: 10, color: t.color, border: `1px solid ${t.color}`, borderRadius: 4, padding: "2px 6px" }}>{t.text}</span>)}
+                                                    {jd.jamEnd && <span style={{ fontSize: 10, color: C.textSecondary, border: `1px solid ${C.border}`, borderRadius: 4, padding: "2px 6px" }}>{jamEndLabel(jd.jamEnd)}</span>}
                                                     {starTags.map((tk) => <span key={tk} style={{ fontSize: 10, color: teamColor(tk), border: `1px solid ${teamColor(tk)}`, borderRadius: 4, padding: "2px 6px" }}>★ {teamName(tk)}</span>)}
                                                 </div>
                                             </div>
@@ -671,7 +664,7 @@ function ReviewScreen({ jams, teams, onReset }) {
                     <div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
                             {["all", "teamA", "teamB"].map((f) => (
-                                <button key={f} style={{ ...btn(), padding: "7px 14px", fontSize: 13, background: filterTeam === f ? C.accent : C.surfaceHigh, color: filterTeam === f ? "#000" : C.textSecondary, border: `1px solid ${C.border}` }} onClick={() => setFilterTeam(f)}>
+                                <button key={f} style={{ ...btn(), padding: "7px 14px", fontSize: 13, background: filterTeam === f ? C.accent : C.surfaceHigh, color: filterTeam === f ? "#fff" : C.textSecondary, border: `1px solid ${C.border}` }} onClick={() => setFilterTeam(f)}>
                                     {f === "all" ? "All" : teams[f].name}
                                 </button>
                             ))}
@@ -684,15 +677,16 @@ function ReviewScreen({ jams, teams, onReset }) {
                                     const count = penalties.length;
                                     const isFO = count >= 7;
                                     const tc = teamColor(team);
+                                    const borderCol = penaltyBorderColor(count, tc);
                                     return (
-                                        <div key={`${team}-${skater}`} style={{ background: C.surface, border: `1px solid ${isFO ? C.foulout : C.border}`, borderLeft: `4px solid ${isFO ? C.foulout : tc}`, borderRadius: 10, padding: "10px 14px" }}>
+                                        <div key={`${team}-${skater}`} style={{ background: C.surface, border: `1px solid ${borderCol}`, borderLeft: `4px solid ${borderCol}`, borderRadius: 10, padding: "10px 14px" }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                                                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                                                     <span style={{ fontSize: 20, fontWeight: 900, color: tc }}>#{skater}</span>
                                                     <span style={{ fontSize: 12, color: C.textSecondary }}>{teamName(team)}</span>
-                                                    {isFO && <span style={{ fontSize: 10, fontWeight: 800, color: C.foulout, background: `${C.foulout}22`, borderRadius: 4, padding: "2px 6px" }}>FOUL OUT</span>}
+                                                    {isFO && <span style={{ fontSize: 10, fontWeight: 800, color: C.foulout, background: `${C.foulout}18`, borderRadius: 4, padding: "2px 6px" }}>FOUL OUT</span>}
                                                 </div>
-                                                <span style={{ fontSize: 26, fontWeight: 900, color: isFO ? C.foulout : count >= 5 ? C.accent : C.textPrimary }}>{count}</span>
+                                                <span style={{ fontSize: 26, fontWeight: 900, color: borderCol }}>{count}</span>
                                             </div>
                                             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                                                 {penalties.map((p, i) => (
